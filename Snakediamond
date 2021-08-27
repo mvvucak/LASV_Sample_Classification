@@ -1,0 +1,228 @@
+configfile: "config.yml"
+
+rule all:
+    input:
+        # expand("Diamond/Assemblies/{sample}_contigs_taxonomy_info.tsv", sample = config["all_samples"]),
+        # expand("Contigs/{taxon}/{sample}_{taxon}_contig_stats.tsv", sample = config["all_samples"], taxon = config["target_taxons"]),
+        expand("Contigs/{taxon}/{taxon}_all_samples_stats.tsv", taxon = config["target_taxons"]),
+        # expand("Diamond/Assemblies/{animal}_contigs_diamond.m8", animal = ["00019"]),
+        # expand("Contigs/{taxon}/{animal}_{taxon}_contig_stats.tsv", animal = ["00019"], taxon = config["target_taxons"]),
+        # expand("Contigs/{taxon}/{taxon}_all_animals_stats.tsv", taxon = config["target_taxons"])
+
+
+
+rule run_diamond_on_contigs:
+    input:
+        "Assemblies/Spades/{sample}/contigs.fasta"
+    output:
+        "Diamond/Assemblies/{sample}_contigs_diamond.m8"
+    threads: 16
+    conda:
+        "Environments/diamond.yml"
+    params:
+        diamond_db = "/home2/mvv1e/Databases/RefSeq_Protein.dmnd",
+        diamond_block_size = 12,
+        diamond_index_chunks = 1,
+        diamond_tabular_format = "qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore staxids sscinames sskingdoms skingdoms"
+    shell:
+        "diamond blastx -d {params.diamond_db} -p {threads} -b {params.diamond_block_size} -c {params.diamond_index_chunks} -q {input} -o {output} --top 1 -f 6 {params.diamond_tabular_format}"
+
+
+rule run_diamond_on_aggregate_contigs:
+    input:
+        "Assemblies/Spades/{animal}_all_samples/scaffolds.fasta"
+    output:
+        "Diamond/Assemblies/{animal}_contigs_diamond.m8"
+    threads: 16
+    conda:
+        "Environments/diamond.yml"
+    params:
+        diamond_db = "/home2/mvv1e/Databases/RefSeq_Protein.dmnd",
+        diamond_block_size = 12,
+        diamond_index_chunks = 1,
+        diamond_tabular_format = "qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore staxids sscinames sskingdoms skingdoms"
+    shell:
+        "diamond blastx -d {params.diamond_db} -p {threads} -b {params.diamond_block_size} -c {params.diamond_index_chunks} -q {input} -o {output} --top 1 -f 6 {params.diamond_tabular_format}"
+
+
+# Aggregates Diamond hit TaxIDs for each contig into a single value (a list)
+# This collapses all contigs to just one row, rather than one row per hit.
+rule collapse_taxids_for_each_contig:
+    input:
+        "Diamond/Assemblies/{sample}_contigs_diamond.m8"
+    output:
+        "Diamond/Assemblies/{sample}_diamond_taxids_by_contig.tsv"
+    threads: 1
+    run:
+        import pandas as pd 
+
+        # Field names for dataframe.
+        col_names = ["Contig", "Identity", "Evalue", "Diamond Hit TaxID"]
+
+        # Diamond .m8 columns to keep. Correspond to col_names
+        cols_to_use = [0, 2, 10, 12]
+
+        # Read in .tsv using above field names. Ensure TaxID is read in as a string rather than an int
+        diamond_df = pd.read_csv(input[0], sep = '\t', usecols = cols_to_use, names = col_names, dtype = {"Diamond Hit TaxID":str})
+
+        # Get boolean array of all contigs where True means there is no TaxID for the hit.
+        no_taxid_mask = diamond_df["Diamond Hit TaxID"].isna()
+
+        # Remove all entries without a taxID for the hit.
+        filtered_df = diamond_df.loc[~no_taxid_mask]
+
+        # Group fields by contig name, then join separate TaxID entries for each contig.
+        taxid_collapsed_df = filtered_df.groupby("Contig")["Diamond Hit TaxID"].apply(" ".join).reset_index()
+
+
+        # Write datarame with collapsed TaxID fields to file.
+        taxid_collapsed_df.to_csv(output[0], sep = '\t', index = False)
+
+
+rule get_taxonomy_info_for_each_contig:
+    input:
+        "Diamond/Assemblies/{sample}_diamond_taxids_by_contig.tsv"
+    output:
+        "Diamond/Assemblies/{sample}_contigs_taxonomy_info.tsv"
+    threads: 1
+    params:
+        script = "Scripts/get_tax_ranks.py",
+        ranks = " ".join(config.get("tax_ranks", ["superkingdom"]))
+    shell:
+        "python3 {params.script} -i {input} -o {output} -r {params.ranks}"
+
+
+rule subset_contigs_list_by_taxon:
+    input:
+        "Diamond/Assemblies/{sample}_contigs_taxonomy_info.tsv"
+    output:
+        "Contigs/{taxon}/{sample}_{taxon}_contigs_list.tsv"
+    threads: 1
+    run:
+        import pandas as pd 
+
+        # Read in dataframe containing taxonomy information for all contigs.
+        contig_df = pd.read_csv(input[0], sep = '\t', index_col = 0, keep_default_na=False)
+
+
+        # Retrieve taxonomic rank of target taxon.
+        taxon_rank = config["target_taxons"][wildcards.taxon]["rank"]
+
+        # Retrieve taxid of target taxon.
+        taxon_id = config["target_taxons"][wildcards.taxon]["taxid"]
+
+        print(taxon_rank)
+        print(taxon_id)
+
+        # Filter for contigs of desired taxon (i.e. target taxid in target rank).
+        taxon_mask = contig_df.loc[:,taxon_rank] == str(taxon_id)
+        print(contig_df.loc[:,taxon_rank])
+
+        taxon_subset_df = contig_df.loc[taxon_mask]
+
+
+        taxon_subset_df.to_csv(output[0], sep = '\t')
+
+
+rule extract_contigs_by_taxon:
+    input:
+        contigs_list =  "Contigs/{taxon}/{sample}_{taxon}_contigs_list.tsv",
+        all_contigs = "Assemblies/Spades/{sample}/contigs.fasta"
+    output:
+        taxon_contigs = "Contigs/{taxon}/{sample}_{taxon}_contigs.fasta"
+    threads: 1
+    run:
+        from Bio import SeqIO
+        import pandas as pd 
+
+        contigs_df = pd.read_csv(input.contigs_list, sep = '\t')
+
+        contig_names = contigs_df.loc[:,"Contig"].tolist()
+
+
+        taxon_contigs = []
+
+        for rec in SeqIO.parse(input.all_contigs, "fasta"):
+            if rec.id in contig_names:
+                taxon_contigs.append(rec)
+
+        SeqIO.write(taxon_contigs, output.taxon_contigs, "fasta-2line")
+
+
+rule summarize_contigs_by_taxon:
+    input:
+        taxon_contigs = "Contigs/{taxon}/{sample}_{taxon}_contigs.fasta"
+    output:
+        contigs_summary = "Contigs/{taxon}/{sample}_{taxon}_contig_stats.tsv"
+    threads: 1
+    run: 
+        from Bio import SeqIO
+        import pandas as pd
+        from numpy import median
+
+        contigs = []
+        for rec in SeqIO.parse(input.taxon_contigs, "fasta-2line"):
+            contigs.append(rec) 
+
+        contig_data = {}
+
+        if len(contigs) == 0:
+            contig_data["num_contigs"] = 0
+            contig_data["max_length"] = 0
+            contig_data["median_length"] = 0
+            contig_data["percent_tiny_contigs"] = 0
+        else:
+            contig_data["num_contigs"] = len(contigs)   
+            contig_data["max_length"] = max([len(contig.seq) for contig in contigs])
+            contig_data["median_length"] = median([len(contig.seq) for contig in contigs])
+            contig_data["percent_tiny_contigs"] = len([contig for contig in contigs if len(contig.seq) < 1000])/contig_data["num_contigs"]*100
+
+        contig_df = pd.DataFrame(contig_data, index = [wildcards.sample])
+
+        # print(contig_df)
+        
+        contig_df.to_csv(output.contigs_summary, sep = '\t')
+
+
+rule aggregate_taxon_contig_summaries:
+    input:
+        expand("Contigs/{{taxon}}/{sample}_{{taxon}}_contig_stats.tsv", sample = config["all_samples"])
+    output:
+        taxon_summary = "Contigs/{taxon}/{taxon}_all_samples_stats.tsv"
+    threads: 1
+    run:
+        import pandas as pd 
+        overall_df = None 
+
+        for file in input:
+            file_df = pd.read_csv(file, sep = '\t', index_col = 0)
+
+
+            if overall_df is None:
+                overall_df = file_df 
+            else:
+                overall_df = overall_df.append(file_df)
+
+        overall_df.to_csv(output.taxon_summary, sep = '\t')
+
+
+rule aggregate_taxon_contig_summaries_by_animal:
+    input:
+        expand("Contigs/{{taxon}}/{animal}_{{taxon}}_contig_stats.tsv", animal = config["animals"])
+    output:
+        taxon_summary = "Contigs/{taxon}/{taxon}_all_animals_stats.tsv"
+    threads: 1
+    run:
+        import pandas as pd 
+        overall_df = None 
+
+        for file in input:
+            file_df = pd.read_csv(file, sep = '\t', index_col = 0)
+
+
+            if overall_df is None:
+                overall_df = file_df 
+            else:
+                overall_df = overall_df.append(file_df)
+
+        overall_df.to_csv(output.taxon_summary, sep = '\t')

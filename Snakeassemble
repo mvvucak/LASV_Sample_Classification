@@ -1,0 +1,36 @@
+configfile: "config.yml"
+
+rule all:
+	input:
+		expand("Assemblies/Spades/{sample}/scaffolds.fasta", sample = config["all_samples"]),
+		expand("Assemblies/Spades/{animal}_all_samples/scaffolds.fasta", animal = config["animals"])
+
+
+rule spades_with_ribopicked_reads:
+	input:
+		"".join(["Reads/Ribopicked/{sample}_R1_nonrrna_shared.", config["trimmed_reads_format"]]),
+		"".join(["Reads/Ribopicked/{sample}_R2_nonrrna_shared.", config["trimmed_reads_format"]])
+	output:
+		"Assemblies/Spades/{sample}/scaffolds.fasta"
+	params:
+		output_dir = "Assemblies/Spades/{sample}"
+	benchmark:
+		"Benchmarks/{sample}_assemble_from_ribopicked_reads_benchmark.txt"
+	threads: 8
+	shell:
+		"spades.py --careful --cov-cutoff auto -t {threads} -1 {input[0]} -2 {input[1]} -k 33,77,127 -o {params.output_dir}"
+
+
+rule spades_with_aggregated_ribopicked_reads:
+	input:
+		"".join(["Reads/Ribopicked/{animal}_all_samples_R1.", config["trimmed_reads_format"]]),
+		"".join(["Reads/Ribopicked/{animal}_all_samples_R2.", config["trimmed_reads_format"]])
+	output:
+		"Assemblies/Spades/{animal}_all_samples/scaffolds.fasta"
+	params:
+		output_dir = "Assemblies/Spades/{animal}_all_samples"
+	benchmark:
+		"Benchmarks/{animal}_all_samples__assemble_from_ribopicked_reads_benchmark.txt"
+	threads: 8
+	shell:
+		"spades.py --careful --cov-cutoff auto -t {threads} -1 {input[0]} -2 {input[1]} -k 33,77,127 -o {params.output_dir}"

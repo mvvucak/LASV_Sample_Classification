@@ -1,0 +1,317 @@
+configfile: "config.yml"
+
+
+rule all:
+    input:
+        expand("Reads/Ribopicked/{animal}_all_samples_R{num}.fq.gz", animal = config["all_samples_by_animal"], num = ["1", "2"])
+
+rule gzip_raw_reads:
+	input:
+		"".join(["Reads/Raw/{sample}_R1_001.", config["raw_reads_format"]]),
+		"".join(["Reads/Raw/{sample}_R2_001.", config["raw_reads_format"]])
+	output:
+		"".join(["Reads/Raw/{sample}_R1_001.", config["compressed_raw_reads_format"]]),
+		"".join(["Reads/Raw/{sample}_R2_001.", config["compressed_raw_reads_format"]])
+	threads: 1
+	shell:
+		"""
+		gzip {input[0]}
+		gzip {input[1]}
+		"""
+
+
+def get_all_reads_for_animal(wildcards):
+    animal = wildcards.animal
+    num = wildcards.num
+    print(animal)
+    print(num)
+    read_files = []
+    for sample in config["all_samples_by_animal"][animal]:
+        read_files.append("Reads/Ribopicked/{}_R{}_nonrrna_shared.fq.gz".format(sample, num))
+    print(read_files)
+    return read_files
+
+
+rule concatenate_ribopicked_read_sets_for_animals:
+    input:
+        get_all_reads_for_animal
+    output:
+        "Reads/Ribopicked/{animal}_all_samples_R{num}.fq.gz"
+    params:
+        uncompressed_output = "Reads/Ribopicked/{animal}_all_samples_R{num}.fq"
+    threads: 1
+    shell:
+        """
+        zcat {input} | gzip > {output}
+        """
+
+rule count_raw_reads:
+	input:
+		"".join(["Reads/Raw/{sample}_R1_001.", config["compressed_raw_reads_format"]]),
+		"".join(["Reads/Raw/{sample}_R2_001.", config["compressed_raw_reads_format"]])
+	output:
+		"Reads/Raw/{sample}_raw_read_counts.csv"
+	threads: 1
+	shell:
+		"""
+		echo 'Raw' > {output}
+		READ_COUNT=$(zcat {input[0]} | echo $((`wc -l`/4)))
+		sed -i "{{\$s/$/,$READ_COUNT/}}" {output}
+		"""
+
+rule trim_reads:
+	input:
+		"".join(["Reads/Raw/{sample}_R1_001.", config["compressed_raw_reads_format"]]),
+		"".join(["Reads/Raw/{sample}_R2_001.", config["compressed_raw_reads_format"]])
+	output:
+		"".join(["Reads/Trimmed/{sample}_R1_001_val_1.", config["trimmed_reads_format"]]),
+		"".join(["Reads/Trimmed/{sample}_R2_001_val_2.", config["trimmed_reads_format"]])
+	threads: 1
+	shell:
+		"trim_galore -q 25 --length 50 --paired --output_dir Reads/Trimmed {input}"
+
+rule count_trimmed_reads:
+	input:
+		"".join(["Reads/Trimmed/{sample}_R1_001_val_1.", config["trimmed_reads_format"]]),
+		"".join(["Reads/Trimmed/{sample}_R2_001_val_2.", config["trimmed_reads_format"]])
+	output:
+		"Reads/Trimmed/{sample}_trimmed_read_counts.csv"
+	threads: 1
+	shell:
+		"""
+		echo 'Trimmed' > {output}
+		READ_COUNT=$(zcat {input[0]} | echo $((`wc -l`/4)))
+		sed -i "{{\$s/$/,$READ_COUNT/}}" {output}
+		"""
+
+rule unzip_for_deduplication:
+	input:
+		"".join(["Reads/Trimmed/{sample}_R1_001_val_1.", config["trimmed_reads_format"]]),
+		"".join(["Reads/Trimmed/{sample}_R2_001_val_2.", config["trimmed_reads_format"]])
+	output:
+		"Reads/Trimmed/{sample}_R1_001_val_1.fq",
+		"Reads/Trimmed/{sample}_R2_001_val_2.fq"
+	threads: 1
+	shell:
+		"""
+		gunzip -c {input[0]} > {output[0]}
+		gunzip -c {input[1]} > {output[1]}
+		"""
+
+rule create_deduplication_reads_file:
+	input:
+		expand("Reads/Trimmed/{{sample}}_R{num}_001_val_{num}.fq", num=[1,2])
+	output:
+		"Reads/Deduplicated/{sample}.txt"
+	threads: 1
+	shell:
+		"""
+		echo {input[0]} > {output}
+		echo {input[1]} >> {output}
+		"""
+
+rule deduplicate_reads:
+	input:
+		expand("Reads/Trimmed/{{sample}}_R{num}_001_val_{num}.fq", num=[1,2]),
+		"Reads/Deduplicated/{sample}.txt"
+	output:
+		"Reads/Deduplicated/{sample}_R1_dedup.fq",
+		"Reads/Deduplicated/{sample}_R2_dedup.fq"
+	threads: 1
+	shell:
+		"""
+		/home3/scc20x/bin/fastuniq -i {input[2]} -t q -o {output[0]} -p {output[1]}
+		"""
+
+
+
+rule zip_deduplicated_reads_and_remove_uncompressed_trimmed_reads:
+	input:
+		"Reads/Deduplicated/{sample}_R1_dedup.fq",
+		"Reads/Deduplicated/{sample}_R2_dedup.fq",
+		expand("Reads/Trimmed/{{sample}}_R{num}_001_val_{num}.fq", num=[1,2])
+	output:
+		"".join(["Reads/Deduplicated/{sample}_R1_dedup.", config["trimmed_reads_format"]]),
+		"".join(["Reads/Deduplicated/{sample}_R2_dedup.", config["trimmed_reads_format"]])
+	shell:
+		"""
+		gzip {input[0]}
+		gzip {input[1]}
+		rm -f {input[2]}
+		rm -f {input[3]}
+		"""
+
+rule count_and_zip_deduplicated_reads:
+	input:
+		"".join(["Reads/Deduplicated/{sample}_R1_dedup.", config["trimmed_reads_format"]]),
+		"".join(["Reads/Deduplicated/{sample}_R2_dedup.", config["trimmed_reads_format"]])
+	output:
+		"Reads/Deduplicated/{sample}_deduplicated_read_counts.csv",
+	threads: 1
+	shell:
+		"""
+		echo 'Deduplicated' > {output}
+		READ_COUNT=$(zcat {input[0]} | echo $((`wc -l`/4)))
+		sed -i "{{\$s/$/,$READ_COUNT/}}" {output}
+
+		"""
+
+# Separate reads into rRNA and non-rRNA.
+# Keep temporary files as these will show which rRNA database entries were hit.
+rule filter_rrna_reads_with_ribopicker:
+	input:
+		"Reads/Deduplicated/{sample}_R{num}_dedup.fq"
+	output:
+		"Reads/Ribopicked/{sample}_R{num}_nonrrna.fq",
+		"Reads/Ribopicked/{sample}_R{num}_rrna.fq",
+	params:
+		output_dir = "Reads/Ribopicked/"
+	benchmark:
+		"Benchmarks/{sample}_R{num}_ribopicker_benchmark.txt"
+	threads: 16
+	shell:
+		"""
+		ribopicker.pl -f {input} -dbs slr123,ssr123 -t {threads} -out_dir {params.output_dir} -id {wildcards.sample}_R{wildcards.num}
+		"""
+
+rule gzip_ribopicker_output:
+	input:
+		"Reads/Ribopicked/{sample}_R{num}_nonrrna.fq",
+		"Reads/Ribopicked/{sample}_R{num}_rrna.fq"
+	output:
+		"Reads/Ribopicked/{sample}_R{num}_nonrrna.fq.gz",
+		"Reads/Ribopicked/{sample}_R{num}_rrna.fq.gz"
+	threads: 1
+	shell:
+		"""
+		gzip {input[0]}
+		gzip {input[1]}
+		"""
+
+rule filter_for_shared_non_rrna_Reads:
+	input:
+		"Reads/Ribopicked/{sample}_R1_nonrrna.fq.gz",
+		"Reads/Ribopicked/{sample}_R2_nonrrna.fq.gz"
+	output:
+		"Reads/Ribopicked/{sample}_R1_nonrrna_shared.fq.gz",
+		"Reads/Ribopicked/{sample}_R2_nonrrna_shared.fq.gz"
+	params:
+		temp_r1_shared = "Reads/Ribopicked/{sample}_R1_nonrrna_shared.fq",
+		temp_r2_shared = "Reads/Ribopicked/{sample}_R2_nonrrna_shared.fq"
+	benchmark:
+		"Benchmarks/{sample}_get_shared_nonrrna_benchmark.txt"
+	threads:1
+	shell:
+		"""
+		zgrep -w -A3 -f <(zcat {input[0]} | paste - - - - | tr ' ' '\t' | cut -f1) {input[1]} | grep -v -- "^--$" > {params.temp_r2_shared}
+		zgrep -w -A3 -f <(zcat {input[1]} | paste - - - - | tr ' ' '\t' | cut -f1) {input[0]} | grep -v -- "^--$" > {params.temp_r1_shared}
+		gzip {params.temp_r1_shared}
+		gzip {params.temp_r2_shared}
+		"""
+
+rule count_rrna_vs_nonrrna_reads:
+	input:
+		"Reads/Ribopicked/{sample}_R1_nonrrna.fq.gz",
+		"Reads/Ribopicked/{sample}_R2_nonrrna.fq.gz",
+		"Reads/Ribopicked/{sample}_R1_rrna.fq.gz",
+		"Reads/Ribopicked/{sample}_R2_rrna.fq.gz"
+	output:
+		"Reads/Ribopicked/{sample}_rrna_counts.tsv"
+	threads: 1
+	run:
+		import subprocess
+		import pandas as pd 
+
+		nonrrna_reads = 0
+		for reads_file in [input[0], input[1]]:
+			zcat_file = subprocess.Popen(["zcat", reads_file], shell = False, stdin = subprocess.PIPE, stdout = subprocess.PIPE)
+			count_lines = subprocess.Popen(["wc", "-l"], shell = False, stdin = zcat_file.stdout, stdout = subprocess.PIPE)
+
+			# Grab results and decode from binary
+			line_count = count_lines.communicate()[0].decode().rstrip() # Removes last newline
+
+			line_count = re.split(" ", line_count)[0] # Grab number, removing file name from wc command output
+
+			read_count = int(line_count)/4 # Each fastq record is 4 lines, so divide by 4 for number of reads.
+
+			nonrrna_reads += int(read_count)
+
+		rrna_reads = 0
+		for reads_file in [input[2], input[3]]:
+			zcat_file = subprocess.Popen(["zcat", reads_file], shell = False, stdin = subprocess.PIPE, stdout = subprocess.PIPE)
+			count_lines = subprocess.Popen(["wc", "-l"], shell = False, stdin = zcat_file.stdout, stdout = subprocess.PIPE)
+
+			# Grab results and decode from binary
+			line_count = count_lines.communicate()[0].decode().rstrip() # Removes last newline
+
+			line_count = re.split(" ", line_count)[0] # Grab number, removing file name from wc command output
+			
+			read_count = int(line_count)/4 # Each fastq record is 4 lines, so divide by 4 for number of reads.
+			
+			rrna_reads += int(read_count)
+
+		reads_df = pd.DataFrame(data = {"Non-rRNA Reads": nonrrna_reads, "rRNA Reads": rrna_reads}, index = [wildcards.sample])
+		reads_df.to_csv(output[0], sep = "\t")
+
+
+rule aggregate_rrna_read_counts_across_samples:
+	input:
+		expand("Reads/Ribopicked/{sample}_rrna_counts.tsv", sample = config["all_samples"])
+	output:
+		"Reads/rRNA_counts.tsv"
+	threads: 1
+	run:
+		import pandas as pd 
+
+		rrna_reads_df = None
+		for file in input:
+			sample_df = pd.read_csv(file, sep = "\t", index_col = 0)
+			if rrna_reads_df is None:
+				rrna_reads_df = sample_df
+			else:
+				rrna_reads_df = rrna_reads_df.append(sample_df)
+
+		rrna_reads_df.to_csv(output[0], sep = "\t")
+
+
+rule aggregate_read_counts_across_steps:
+	input:
+		"Reads/Raw/{sample}_raw_read_counts.csv",
+		"Reads/Trimmed/{sample}_trimmed_read_counts.csv",
+		"Reads/Deduplicated/{sample}_deduplicated_read_counts.csv",
+	output:
+		"Reads/Aggregate/{sample}_read_counts.csv"
+	threads: 1
+	shell:
+		"""
+		echo 'Sample,{wildcards.sample}' > {output}
+		cat {input[0]} >> {output}
+		cat {input[1]} >> {output}
+		cat {input[2]} >> {output}
+		"""
+
+
+rule aggregate_read_counts_across_samples:
+	input:
+		expand("Reads/Aggregate/{sample}_read_counts.csv", sample = config["all_samples"])
+	output:
+		"Reads/Read_Processing_Summary.csv"
+	threads: 1
+	shell:
+		"python3 Scripts/aggregate_read_counts.py {output} -i {input}"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
