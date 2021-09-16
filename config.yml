@@ -1,0 +1,297 @@
+###### Sample and Reference Information ######
+
+all_samples:
+  - 00414_BL_L1_NA_S20
+  - 00367_BL_L1_NA_S19
+  - 00292_BL_L1_NA_S22
+  - 00291_BL_L1_NA_S21
+  - 00241_BL_L1_NA_S18
+  - 00217_BL_L1_NA_S11
+  - 00214_BL_L1_NA_S10
+  - 00207_BL_L1_NA_S17
+  - 00127_BL_L1_NA_S16
+  - 00094_BL_L1_NA_S15
+  - 00053_BL_L1_NA_S14
+  - 00019_BL_L1_NA_S13
+  - 00013_BL_L1_NA_S12
+  - 00414_US_L_NA_S20
+  - 00414_OS_L_NA_S21
+  - 00367_US_L_NA_S19
+  - 00367_OS_L_NA_S23
+  - 00304_US_L_NA_S13
+  - 00304_BL_L1_NA_S2
+  - 00303_US_L_NA_S28
+  - 00303_OS_L_NA_S30
+  - 00303_BL_L1_NA_S1
+  - 00292_US_L_NA_S27
+  - 00292_OS_L_NA_S29
+  - 00291_US_L_NA_S18
+  - 00291_OS_L_NA_S22
+  - 00241_US_L_NA_S17
+  - 00217_US_L_NA_S16
+  - 00214_US_L_NA_S15
+  - 00207_US_L_NA_S14
+  - 00205_US_L_NA_S12
+  - 00205_BL_L1_NA_S9
+  - 00204_US_L_NA_S13
+  - 00204_BL_L1_NA_S8
+  - 00199_US_L_NA_S11
+  - 00199_BL_L1_NA_S7
+  - 00188_US_L_NA_S12
+  - 00188_BL_L1_NA_S6
+  - 00187_US_L_NA_S26
+  - 00187_OS_L_NA_S24
+  - 00187_BL_L1_NA_S5
+  - 00127_US_L_NA_S10
+  - 00106_US_L_NA_S11
+  - 00106_BL_L1_NA_S4
+  - 00052_US_L_NA_S25
+  - 00052_OS_L_NA_S23
+  - 00052_BL_L1_NA_S3
+  - 00019_US_L_NA_S10
+  - 00304_OS_L_NA_S6
+  - 00241_OS_L_NA_S9
+  - 00217_OS_L_NA_S8
+  - 00214_OS_L_NA_S7
+  - 00207_OS_L_NA_S6
+  - 00205_OS_L_NA_S5
+  - 00204_OS_L_NA_S5
+  - 00199_OS_L_NA_S4
+  - 00188_OS_L_NA_S4
+  - 00127_OS_L_NA_S3
+  - 00106_OS_L_NA_S3
+  - 00094_US_L_NA_S9
+  - 00094_OS_L_NA_S2
+  - 00053_US_L_NA_S8
+  - 00053_OS_L_NA_S2
+  - 00019_OS_L_NA_S1
+  - 00013_US_L_NA_S7
+  - 00013_OS_L_NA_S1
+animals:
+    - "00414"
+    - "00367"
+    - "00292"
+    - "00291"
+    - "00241"
+    - "00217"
+    - "00214"
+    - "00207"
+    - "00127"
+    - "00094"
+    - "00053"
+    - "00019"
+    - "00013"
+    - "00304"
+    - "00303"
+    - "00205"
+    - "00204"
+    - "00199"
+    - "00188"
+    - "00187"
+    - "00106"
+    - "00052"
+lasv_positive_animals:
+    - "00292"
+    - "00291"
+    - "00241"
+    - "00217"
+    - "00214"
+    - "00019"
+    - "00303"
+    - "00204"
+    - "00188"
+    - "00187"
+    - "00106"
+    - "00052"
+all_samples_by_animal:
+  "00414":
+    - 00414_BL_L1_NA_S20
+    - 00414_US_L_NA_S20
+    - 00414_OS_L_NA_S21
+  "00367":
+    - 00367_BL_L1_NA_S19
+    - 00367_US_L_NA_S19
+    - 00367_OS_L_NA_S23
+  "00292":
+    - 00292_BL_L1_NA_S22
+    - 00292_US_L_NA_S27
+    - 00292_OS_L_NA_S29
+  "00291":
+    - 00291_BL_L1_NA_S21
+    - 00291_US_L_NA_S18
+    - 00291_OS_L_NA_S22
+  "00241":
+    - 00241_BL_L1_NA_S18
+    - 00241_US_L_NA_S17
+    - 00241_OS_L_NA_S9
+  "00217":
+    - 00217_BL_L1_NA_S11
+    - 00217_US_L_NA_S16
+    - 00217_OS_L_NA_S8
+  "00214":
+    - 00214_BL_L1_NA_S10
+    - 00214_US_L_NA_S15
+    - 00214_OS_L_NA_S7
+  "00207":
+    - 00207_BL_L1_NA_S17
+    - 00207_US_L_NA_S14
+    - 00207_OS_L_NA_S6
+  "00127":
+    - 00127_BL_L1_NA_S16
+    - 00127_US_L_NA_S10
+    - 00127_OS_L_NA_S3
+  "00094":
+    - 00094_BL_L1_NA_S15
+    - 00094_US_L_NA_S9
+    - 00094_OS_L_NA_S2
+  "00053":
+    - 00053_BL_L1_NA_S14
+    - 00053_US_L_NA_S8
+    - 00053_OS_L_NA_S2
+  "00019":
+    - 00019_BL_L1_NA_S13
+    - 00019_US_L_NA_S10
+    - 00019_OS_L_NA_S1
+  "00013":
+    - 00013_BL_L1_NA_S12
+    - 00013_US_L_NA_S7
+    - 00013_OS_L_NA_S1
+  "00304":
+    - 00304_US_L_NA_S13
+    - 00304_BL_L1_NA_S2
+    - 00304_OS_L_NA_S6
+  "00303":
+    - 00303_US_L_NA_S28
+    - 00303_OS_L_NA_S30
+    - 00303_BL_L1_NA_S1
+  "00205":
+    - 00205_US_L_NA_S12
+    - 00205_BL_L1_NA_S9
+    - 00205_OS_L_NA_S5
+  "00204":
+    - 00204_US_L_NA_S13
+    - 00204_BL_L1_NA_S8
+    - 00204_OS_L_NA_S5
+  "00199":
+    - 00199_US_L_NA_S11
+    - 00199_BL_L1_NA_S7
+    - 00199_OS_L_NA_S4
+  "00188":
+    - 00188_US_L_NA_S12
+    - 00188_BL_L1_NA_S6
+    - 00188_OS_L_NA_S4
+  "00187":
+    - 00187_US_L_NA_S26
+    - 00187_OS_L_NA_S24
+    - 00187_BL_L1_NA_S5
+  "00106":
+    - 00106_US_L_NA_S11
+    - 00106_BL_L1_NA_S4
+    - 00106_OS_L_NA_S3
+  "00052":
+    - 00052_US_L_NA_S25
+    - 00052_OS_L_NA_S23
+    - 00052_BL_L1_NA_S3
+lasv_positive_samples:
+  - 00303_US_L_NA_S28
+  - 00303_OS_L_NA_S30
+  - 00303_BL_L1_NA_S1
+  - 00292_US_L_NA_S27
+  - 00292_OS_L_NA_S29
+  - 00292_BL_L1_NA_S22
+  - 00241_BL_L1_NA_S18
+  - 00217_BL_L1_NA_S11
+  - 00214_BL_L1_NA_S10
+  - 00204_BL_L1_NA_S8
+  - 00187_US_L_NA_S26
+  - 00187_OS_L_NA_S24
+  - 00187_BL_L1_NA_S5
+  - 00106_BL_L1_NA_S4
+  - 00052_US_L_NA_S25
+  - 00052_OS_L_NA_S23
+  - 00019_BL_L1_NA_S13
+references:
+  - Lineage_4_Reference
+  - Lineage_3_Reference
+  - Lineage_2_Reference
+reference_ids:
+  - GU481071.1
+  - GU481072.1
+good_s_scaffold_samples:
+  - 00303_US_L_NA_S28
+  - 00303_OS_L_NA_S30
+  - 00303_BL_L1_NA_S1
+  - 00292_US_L_NA_S27
+  - 00292_OS_L_NA_S29
+  - 00292_BL_L1_NA_S22
+  - 00241_BL_L1_NA_S18
+  - 00214_BL_L1_NA_S10
+  - 00204_BL_L1_NA_S8
+  - 00187_US_L_NA_S26
+  - 00187_OS_L_NA_S24
+  - 00187_BL_L1_NA_S5
+  - 00106_BL_L1_NA_S4
+  - 00052_US_L_NA_S25
+  - 00052_OS_L_NA_S23
+variant_threshold:
+  0.5
+coverage_threshold:
+  0.3
+subsampling_percentage:
+  0.2  
+
+tax_ranks:
+  - superkingdom
+  - phylum
+  - class
+  - order
+  - family
+  - subfamily
+  - genus
+
+target_taxons:
+  virus:
+    rank: superkingdom
+    taxid: 10239
+  herpesvirus:
+    rank: family
+    taxid: 10292 
+  mammarenavirus:
+    rank: genus
+    taxid: 1653394
+  arenaviridae:
+    rank: family
+    taxid: 11617
+
+###### File locations and file extensions ######
+
+raw_reads_format:
+  fastq
+compressed_raw_reads_format:
+  fastq.gz
+trimmed_reads_format:
+  fq.gz
+diamond_db:
+  Databases/RefSeq_Protein.dmnd
+bowtie2_index_extensions:
+  - rev.2.bt2
+  - rev.1.bt2
+  - 4.bt2
+  - 3.bt2
+  - 2.bt2
+  - 1.bt2
+bwa_index_extensions:
+  - amb
+  - ann
+  - bwt
+  - pac
+  - sa
+
+
+
+
+
+
+
+
+
