@@ -1,0 +1,87 @@
+configfile: "config.yml"
+
+rule all:
+    input:
+        "Databases/RefSeq_Protein.dmnd"
+
+# Download all RefSeq protein .fasta files from NCBI's ftp directory.
+checkpoint download_nonredundant_protein_fastas:
+    output: 
+        directory("Databases/Fastas")
+    threads: 1
+    shell:
+        "wget -c -P Databases/Fastas ftp://ftp.ncbi.nlm.nih.gov/refseq/release/complete/complete.nonredundant_protein.*faa.gz"
+
+# Collate names of all downloaded RefSeq protein fastas - this is not known in advance
+# Names are returned as a list of files
+def aggregate_nonredunant_protein_input(wildcards):
+    nonredundant_checkpoint_output = checkpoints.download_nonredundant_protein_fastas.get(**wildcards).output[0]
+    return expand("Databases/Fastas/complete.nonredundant_protein.{i}.protein.faa.gz",
+     i = glob_wildcards(os.path.join(nonredundant_checkpoint_output, "complete.nonredundant_protein.{i}.protein.faa.gz")).i)
+
+# Concatenate all protein .fasta files
+rule aggregate_nonredunant_protein_fasta:
+    input:
+        aggregate_nonredunant_protein_input
+    output:
+        "Databases/complete.nonredundant_protein.all.protein.faa"
+    shell:
+        "zcat {input} > {output}"
+
+# Compress concatenated protein .fasta file using parallelized gzip
+rule compress_aggregated_fasta:
+    input:  
+        "Databases/complete.nonredundant_protein.all.protein.faa"
+    output:
+        "Databases/complete.nonredundant_protein.all.protein.faa.gz"
+    threads: 10
+    shell:
+        "pigz -p {threads} {input}"
+
+rule download_accession_to_taxid_map:
+    output:
+        "Databases/prot.accession2taxid.gz"
+    threads: 1
+    params:
+        ftp_address = "ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz"      
+    shell:
+        "wget -c -P Databases {params.ftp_address}"
+
+
+rule download_ncbi_taxdump:
+    output:
+        "Databases/taxdmp.zip"
+    threads: 1
+    params:
+        ftp_address = "ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdmp.zip"
+    shell:
+        "wget -c -P Databases ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdmp.zip"
+
+
+rule unzip_taxdump:
+    input:
+        "Databases/taxdmp.zip"
+    output:
+        "Databases/names.dmp",
+        "Databases/nodes.dmp"
+    threads: 1
+    params:
+        directory = "Databases/"
+    shell:
+        "unzip -d {params.directory} {input}"
+
+
+rule create_diamond_database:
+    input:
+        protein_fasta = "Databases/complete.nonredundant_protein.all.protein.faa.gz",
+        acc2txid = "Databases/prot.accession2taxid.gz",
+        names = "Databases/names.dmp",
+        nodes = "Databases/nodes.dmp"
+    output:
+        diamond_db = "Databases/RefSeq_Protein.dmnd"
+    params:
+        db_name = "Databases/RefSeq_Protein"
+    threads: 10
+    shell:
+        "diamond makedb --in {input.protein_fasta} --taxonmap {input.acc2txid} --taxonnames {input.names} --taxonnodes {input.nodes} -d {params.db_name} --threads {threads}"
+
