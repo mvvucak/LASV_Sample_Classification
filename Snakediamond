@@ -10,7 +10,7 @@ rule all:
         # expand("Contigs/{taxon}/{taxon}_all_animals_stats.tsv", taxon = config["target_taxons"])
 
 
-
+# Run Diamond-based BLASTx of de novo contigs against a custom Diamond database
 rule run_diamond_on_contigs:
     input:
         "Assemblies/Spades/{sample}/contigs.fasta"
@@ -20,9 +20,10 @@ rule run_diamond_on_contigs:
     conda:
         "Environments/diamond.yml"
     params:
-        diamond_db = "/home2/mvv1e/Databases/RefSeq_Protein.dmnd",
+        diamond_db = config["diamond_db"],
         diamond_block_size = 12,
         diamond_index_chunks = 1,
+        # For each BLASTx hit, include the hit's TaxID, scientific name and superkingdom/kingdom
         diamond_tabular_format = "qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore staxids sscinames sskingdoms skingdoms"
     shell:
         "diamond blastx -d {params.diamond_db} -p {threads} -b {params.diamond_block_size} -c {params.diamond_index_chunks} -q {input} -o {output} --top 1 -f 6 {params.diamond_tabular_format}"
@@ -62,7 +63,7 @@ rule collapse_taxids_for_each_contig:
         # Diamond .m8 columns to keep. Correspond to col_names
         cols_to_use = [0, 2, 10, 12]
 
-        # Read in .tsv using above field names. Ensure TaxID is read in as a string rather than an int
+        # Read in .tsv as dataframe using above field names. Ensure TaxID is read in as a string rather than an int
         diamond_df = pd.read_csv(input[0], sep = '\t', usecols = cols_to_use, names = col_names, dtype = {"Diamond Hit TaxID":str})
 
         # Get boolean array of all contigs where True means there is no TaxID for the hit.
@@ -72,13 +73,18 @@ rule collapse_taxids_for_each_contig:
         filtered_df = diamond_df.loc[~no_taxid_mask]
 
         # Group fields by contig name, then join separate TaxID entries for each contig.
+        # This collapses each contig entry to a single row.
         taxid_collapsed_df = filtered_df.groupby("Contig")["Diamond Hit TaxID"].apply(" ".join).reset_index()
-
 
         # Write datarame with collapsed TaxID fields to file.
         taxid_collapsed_df.to_csv(output[0], sep = '\t', index = False)
 
 
+# Run script to identify taxonomic lineages for each contig according to
+# the taxonomy of its Diamond hits. This is presented as a TaxID for each
+# taxonomic rank specified in the contig file (default superkingdom only).
+# e.g. a contig with Homo sapiens hits would be assigned:
+# Superkingdom: 2759 (Eukaryota), Kingdom: 40674(Mammalia) etc.
 rule get_taxonomy_info_for_each_contig:
     input:
         "Diamond/Assemblies/{sample}_diamond_taxids_by_contig.tsv"
@@ -92,6 +98,7 @@ rule get_taxonomy_info_for_each_contig:
         "python3 {params.script} -i {input} -o {output} -r {params.ranks}"
 
 
+# Filter dataframe for contigs with hits belonging to a specifi taxon
 rule subset_contigs_list_by_taxon:
     input:
         "Diamond/Assemblies/{sample}_contigs_taxonomy_info.tsv"
@@ -103,7 +110,6 @@ rule subset_contigs_list_by_taxon:
 
         # Read in dataframe containing taxonomy information for all contigs.
         contig_df = pd.read_csv(input[0], sep = '\t', index_col = 0, keep_default_na=False)
-
 
         # Retrieve taxonomic rank of target taxon.
         taxon_rank = config["target_taxons"][wildcards.taxon]["rank"]
@@ -123,7 +129,8 @@ rule subset_contigs_list_by_taxon:
 
         taxon_subset_df.to_csv(output[0], sep = '\t')
 
-
+# Extract contig sequences for contigs with hits belonging to a specific taxon
+# Storing them in a single .fasta file for each 
 rule extract_contigs_by_taxon:
     input:
         contigs_list =  "Contigs/{taxon}/{sample}_{taxon}_contigs_list.tsv",
@@ -166,6 +173,7 @@ rule summarize_contigs_by_taxon:
 
         contig_data = {}
 
+        # If sample has no contigs belonging to taxon, set all values to 0
         if len(contigs) == 0:
             contig_data["num_contigs"] = 0
             contig_data["max_length"] = 0
@@ -179,8 +187,6 @@ rule summarize_contigs_by_taxon:
 
         contig_df = pd.DataFrame(contig_data, index = [wildcards.sample])
 
-        # print(contig_df)
-        
         contig_df.to_csv(output.contigs_summary, sep = '\t')
 
 

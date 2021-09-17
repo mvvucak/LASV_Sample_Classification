@@ -4,6 +4,7 @@ rule all:
     input:
         "Databases/RefSeq_Protein.dmnd"
 
+
 # Download all RefSeq protein .fasta files from NCBI's ftp directory.
 checkpoint download_nonredundant_protein_fastas:
     output: 
@@ -12,12 +13,14 @@ checkpoint download_nonredundant_protein_fastas:
     shell:
         "wget -c -P Databases/Fastas ftp://ftp.ncbi.nlm.nih.gov/refseq/release/complete/complete.nonredundant_protein.*faa.gz"
 
+
 # Collate names of all downloaded RefSeq protein fastas - this is not known in advance
 # Names are returned as a list of files
 def aggregate_nonredunant_protein_input(wildcards):
     nonredundant_checkpoint_output = checkpoints.download_nonredundant_protein_fastas.get(**wildcards).output[0]
     return expand("Databases/Fastas/complete.nonredundant_protein.{i}.protein.faa.gz",
      i = glob_wildcards(os.path.join(nonredundant_checkpoint_output, "complete.nonredundant_protein.{i}.protein.faa.gz")).i)
+
 
 # Concatenate all protein .fasta files
 rule aggregate_nonredunant_protein_fasta:
@@ -27,6 +30,7 @@ rule aggregate_nonredunant_protein_fasta:
         "Databases/complete.nonredundant_protein.all.protein.faa"
     shell:
         "zcat {input} > {output}"
+
 
 # Compress concatenated protein .fasta file using parallelized gzip
 rule compress_aggregated_fasta:
@@ -38,6 +42,7 @@ rule compress_aggregated_fasta:
     shell:
         "pigz -p {threads} {input}"
 
+
 rule download_accession_to_taxid_map:
     output:
         "Databases/prot.accession2taxid.gz"
@@ -48,6 +53,7 @@ rule download_accession_to_taxid_map:
         "wget -c -P Databases {params.ftp_address}"
 
 
+# Download compressed taxdump from NCBI, includes nodes.dmp and names.dmp
 rule download_ncbi_taxdump:
     output:
         "Databases/taxdmp.zip"
@@ -71,6 +77,7 @@ rule unzip_taxdump:
         "unzip -d {params.directory} {input}"
 
 
+# Run Diamond database creation, incorporating taxonomy information.
 rule create_diamond_database:
     input:
         protein_fasta = "Databases/complete.nonredundant_protein.all.protein.faa.gz",
