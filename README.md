@@ -1,5 +1,39 @@
 # LASV_Sample_Classification
- Collection of scripts and pipelines to process Illumina reads from LASV positive samples into taxonomically classified contigs.
+ A collection of scripts and pipelines to process Illumina reads from LASV positive samples into taxonomically classified contigs.
+
+## Dependencies
+
+ These pipelines rely on several third-party tools, including Diamond, SPAdes and NCBI.
+
+### Conda Environment
+
+ lasv_sample_classification.yml contains most of the packages needed to run the pipelines. You will need to clone the environment using Conda:
+
+ conda create --name lasv_sample_class --file lasv_sample_classification.yml
+
+ Then activate it:
+
+ conda ctivate lasv_sample_class
+
+### RiboPicker
+
+ **RiboPicker**  is a tool for filtering out rRNA reads from samples. It is not available on any Conda channel and must be installed separately from:
+
+ https://sourceforge.net/projects/ribopicker/ 
+
+ Ensure that ribopicker can be run with the command ribopicker.pl. Alternatively, modify the ribopicker command in the config.yml file to suit
+ your installation.
+
+
+### DIAMOND Database
+s
+ The contig classification step relies on a functional Diamond2 database constructed from all RefSeq Protein entries in NCBI. Additionally, the database must also include taxonomic information for each entry (TaxID). If you already have such a database, simply change the following pointer in the config.yml file:
+
+ diamond_db:
+  /home2/mvv1e/Databases/RefSeq_Protein.dmnd
+
+ If not, you will have to construct the databse yourself. You can do so following these instructions.
+
  The pipeline consists of 3 separate Snakemake files, to be run sequentially:
 
  1. Snakereads

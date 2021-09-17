@@ -4,6 +4,14 @@ from argparse import ArgumentParser
 
 
 def get_args():
+	"""Collects input parameters from command line call.
+
+	Returns
+	-------
+	args: dict of str:obj
+		Dictionary where key is the name of the argument and
+		values are the user-input options (vary by argument)
+	"""
 	parser = ArgumentParser()
 
 	parser.add_argument("-i", "--input_file", required = True, 
@@ -17,22 +25,8 @@ def get_args():
 	return args
 
 
-def read_in_taxonomy_db():
-	ncbi = NCBITaxa()
-	return ncbi 
-
-
-def read_lca_tsv(input_file):
-	lca_df = pd.read_csv(input_file, sep = '\t', index_col = 0, dtype = {"Diamond Hit TaxID": str})
-	return lca_df
-
-# Given a TaxID, returns its taxonomic rank
-def get_rank(taxid):
-	return ncbi.get_rank([taxid])	
-
-
 def get_specified_parent_ranks(row, ranks):
-	"""Update contig data with TaxIDs for taxon ranks of interest
+	"""Updates contig data with TaxIDs for taxon ranks of interest
 
 	Parameters
 	----------
@@ -131,7 +125,7 @@ def get_lca(taxids):
 			lca = taxids_at_index.pop()
 
 		# Otherwise, at least one lineage has deviated and the queries
-		# no longer share a common ancestor past this indes.
+		# no longer share a common ancestor past this index.
 		# Ancestor from the previous iteration is the LCA.
 		else:
 			return lca
@@ -149,10 +143,11 @@ def main():
 	
 	# Read NCBI Taxonomy database into memory
 	global ncbi
-	ncbi = read_in_taxonomy_db()
+	ncbi = NCBITaxa()
 	
 	# Read TaxID data for contigs in as dataframe
-	lca_df = read_lca_tsv(args.get("input_file"))
+	# Keep TaxID as a str for downstream ncbi method calls
+	lca_df = pd.read_csv(args.get("input_file"), sep = '\t', index_col = 0, dtype = {"Diamond Hit TaxID": str})
 	
 	# Determine LCA for each contig.
 	lca_df["LCA"] = lca_df["Diamond Hit TaxID"].apply(get_lca)
