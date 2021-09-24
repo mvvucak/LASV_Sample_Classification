@@ -90,19 +90,6 @@ animals:
     - "00187"
     - "00106"
     - "00052"
-lasv_positive_animals:
-    - "00292"
-    - "00291"
-    - "00241"
-    - "00217"
-    - "00214"
-    - "00019"
-    - "00303"
-    - "00204"
-    - "00188"
-    - "00187"
-    - "00106"
-    - "00052"
 all_samples_by_animal:
   "00414":
     - 00414_BL_L1_NA_S20
@@ -192,24 +179,7 @@ all_samples_by_animal:
     - 00052_US_L_NA_S25
     - 00052_OS_L_NA_S23
     - 00052_BL_L1_NA_S3
-lasv_positive_samples:
-  - 00303_US_L_NA_S28
-  - 00303_OS_L_NA_S30
-  - 00303_BL_L1_NA_S1
-  - 00292_US_L_NA_S27
-  - 00292_OS_L_NA_S29
-  - 00292_BL_L1_NA_S22
-  - 00241_BL_L1_NA_S18
-  - 00217_BL_L1_NA_S11
-  - 00214_BL_L1_NA_S10
-  - 00204_BL_L1_NA_S8
-  - 00187_US_L_NA_S26
-  - 00187_OS_L_NA_S24
-  - 00187_BL_L1_NA_S5
-  - 00106_BL_L1_NA_S4
-  - 00052_US_L_NA_S25
-  - 00052_OS_L_NA_S23
-  - 00019_BL_L1_NA_S13
+
 references:
   - Lineage_4_Reference
   - Lineage_3_Reference
@@ -233,13 +203,6 @@ good_s_scaffold_samples:
   - 00106_BL_L1_NA_S4
   - 00052_US_L_NA_S25
   - 00052_OS_L_NA_S23
-variant_threshold:
-  0.5
-coverage_threshold:
-  0.3
-subsampling_percentage:
-  0.2  
-
 tax_ranks:
   - superkingdom
   - phylum

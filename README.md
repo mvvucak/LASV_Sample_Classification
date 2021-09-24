@@ -40,7 +40,39 @@
 
  Note that this process can take several hours and that the database will take up ~90GB of storage space when complete.
 
- The pipeline consists of 3 separate Snakemake files, to be run sequentially:
+## Usage
+
+The pipeline consists of 4 Snakemake pipelines to be run sequentially. A config.yml supplies supporting information. 
+The Snakemake files should be run from the project directory using using:
+
+ snakemake --snakefile {filename} -j {allocated threads}.
+
+ This pipeline does not include additional manual steps such as combining LASV contigs into complete sequences:
+ - Splitting erroneously joined segments (L and S segments in one contig)
+- Joining contigs via read mapping extension
+
+### Config File
+
+config.yml stores the following:
+
+ 1. Sample/Animal Information:
+        - Animal IDs under animal (five-digit numbers with leading 0s e.g. 00019)
+        - Sample IDs under all_samples, starting with animal ID followed by sample type and Illumina run identifiers:
+            - 00019_BL_L1_NA_S13 denotes blood sample from animal 00019
+        - Sample IDs are grouped under their corresponding animal under all_samples_by_animal
+2. Target taxon information:
+        - tax_ranks lists the taxonomic ranks to be identified for each Diamond hit. Used by the get_tax_ranks.py script
+        - target_taxons lists information for any taxa being searched for in the de novo output: 
+            - Scientific name (e.g. mammarenavirus)
+            - Taxon rank (e.g. genus)
+            - TaxID (e.g. 1653394)
+3. Mundane processing information:
+        - Expected file extensions (e.g. fastq, fq.gz)
+        - Database paths.
+
+### Snakemake Pipeline
+
+ The pipeline consists of 4 separate Snakemake files, to be run sequentially. A fifth Snakemake file can be used to construct a Diamond database.
 
  1. Snakereads
  	This Snakefile runs basic read processing steps on raw Illumina reads, including:
@@ -58,4 +90,27 @@
  		- Custom Python scripts to match each contig to the Lowest Common Ancestor of all its BLASTx hits.
  		- Custom Python scripts to idnetify and extract contigs matching a target taxon (e.g. all contigs with arenavirus hits)
  	Run with snakemake --snakefile Snakediamond -j {threads}
+    Diamond hit results are stored in the Diamond directory
+    Classified contigs are stored in the Contigs directory
+        - Each target taxon has its own subdirectory.
+ 4. Snakemap
+    This Snakefile maps reads onto LASV contigs using Bowtie2 --local. 
+    It uses samtools to output .bam alignment files for viewing in Tablet or further analysis.
+        - The pipeline relies on LASV sequences being stored in the "Sequences/Final" directory.
+            - This includes two .fasta files per animal:
+                - One for the L segment (e.g. 00019_L.fasta)
+                - One for the S segment (e.g. 00019_S.fasta)
+        - Where each animal has more than one sample (e.g. blood, oral), each sample is mapped individually
+        - Additionally, an aggregate dataset of all samples (denoted "all_samples") is also mapped onto the sequences.
+        - .bam files are stored in the Alignments directory.
+5. Snakedb
+    This Snakefile builds a Diamond database using NCBI RefSeq Protein nonredundant entries.
+        - First, all RefSeq nonredundant protein entries are downloaded from https://ftp.ncbi.nlm.nih.gov/refseq/
+            - These are stored in a Databases/Fastas directory
+        - Next, NCBI taxonomy files are downloaded from https://ftp.ncbi.nih.gov/pub/taxonomy/:
+            - taxdmp.zip which contains nodes.dmp and names.dmp (taxonomy data)
+            - prot.accession2taxid.gz which matches RefSeq accessions with taxonomy IDs
+        - Finally, a Diamond RefSeq Protein database incorporating taxonomy data is constructed
+    Does not need to be run if you already have a Diamond database incorporating taxonomy data.
+
 
