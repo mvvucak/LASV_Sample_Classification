@@ -81,6 +81,7 @@ dependencies:
   - gtk2=2.24.32=h194ddfc_3
   - gts=0.7.6=h1fc3fae_2
   - harfbuzz=2.7.2=hb1ce69c_1
+  - htslib=1.12=h9093b5e_1
   - icu=67.1=he1b5a44_0
   - idna=3.2=pyhd3eb1b0_0
   - idna_ssl=1.1.0=py36h9f0ad1d_1001
@@ -100,8 +101,10 @@ dependencies:
   - libcblas=3.9.0=11_linux64_openblas
   - libclang=10.0.1=default_hde54327_1
   - libcrc32c=1.1.1=he1b5a44_2
+  - libcurl=7.76.1=hc4aaa36_1
   - libdeflate=1.7=h7f98852_5
   - libedit=3.1.20210714=h7f8727e_0
+  - libev=4.33=h516909a_1
   - libevent=2.1.10=hcdb4288_3
   - libffi=3.2.1=he1b5a44_1007
   - libgcc-ng=11.1.0=hc902ee8_8
@@ -113,12 +116,14 @@ dependencies:
   - libiconv=1.16=h516909a_0
   - liblapack=3.9.0=11_linux64_openblas
   - libllvm10=10.0.1=he513fc3_3
+  - libnghttp2=1.43.0=h812cca2_0
   - libopenblas=0.3.17=pthreads_h8fe5266_1
   - libpng=1.6.37=hed695b0_2
   - libpq=12.3=hfd2b0eb_3
   - libprotobuf=3.17.2=h780b84a_1
   - librsvg=2.50.2=h3442318_1
   - libsodium=1.0.18=h516909a_1
+  - libssh2=1.10.0=ha56f1ee_0
   - libstdcxx-ng=11.1.0=h56837e0_8
   - libtiff=4.2.0=hbd63e13_2
   - libtool=2.4.6=h9c3ff4c_1008
@@ -186,9 +191,11 @@ dependencies:
   - qt=5.12.9=h1f2b2cb_0
   - ratelimiter=1.2.0=py_1002
   - readline=8.1=h46c0cb4_0
+  - rename=1.601=hdfd78af_1
   - requests=2.26.0=pyhd8ed1ab_0
   - rsa=4.7.2=pyh44b312d_0
   - s3transfer=0.5.0=pyhd8ed1ab_0
+  - samtools=1.12=h9aed4be_1
   - scipy=1.5.3=py36h81d768a_1
   - setuptools=58.0.3=py36h5fab9bb_0
   - six=1.16.0=pyh6c4a22f_0
@@ -235,3 +242,4 @@ dependencies:
   - zipp=3.5.0=pyhd8ed1ab_0
   - zlib=1.2.11=h516909a_1010
   - zstd=1.4.9=ha95c52a_0
+prefix: /home2/mvv1e/miniconda3/envs/lasv_sample_class
