@@ -1,0 +1,160 @@
+configfile:"config.yml"
+
+
+rule all:
+    input:
+        expand("Alignments/done_{seg}.txt", seg = ["L", "S"])
+
+
+def get_bowtie_target_sequence_files(wildcards):
+    """Determines name of mapping output files for a sample.
+
+    Paramaters
+    ----------
+    wildcards: Snakemake wildcards object
+        Contains sample name and LASV segment as accessible string attributes. These
+        determine which LASV .fasta file to use as a reference.
+
+    Returns
+    -------
+    bowtie_target_files: list of str
+        List containing filepaths for .fasta file to map onto and Bowtie2 index
+        files. .fasta file contains LASV segment sequence found in a given animal.
+
+    """
+
+    import re 
+
+    sample = wildcards.sample
+    segment = wildcards.seg
+
+    bowtie_target_files = []
+
+    # Extract animal ID from provided sample ID
+    # Animal ID is always the first X numbers before the first underscore.
+    regex_pattern = r"^[0-9]*(?=_)" 
+    animal = re.search(regex_pattern, sample).group(0)
+
+    # Get filepath for .fasta file. Always in Sequences/Final.
+    fasta_dir = "Sequences/Final"
+    fasta_filename = animal + "_" + segment + ".fasta"
+    fasta_filepath = os.path.join(fasta_dir, fasta_filename)
+
+    bowtie_target_files.append(fasta_filepath)
+
+    # Get filepaths for .fasta file indices to be created by Bowtie2
+    bowtie_index_files = expand(fasta_filepath+".{extension}", extension = config["bowtie2_index_extensions"])
+
+    bowtie_target_files.extend(bowtie_index_files)
+
+    return bowtie_target_files
+
+
+# Index a reference .fasta file using Bowtie2
+rule build_bowtie_index_for_final_sequences:
+    input:
+        "Sequences/Final/{animal}_{seg}.fasta"
+    output:
+        expand("Sequences/Final/{{animal}}_{{seg}}.fasta.{extension}", extension = config["bowtie2_index_extensions"])
+    shell:
+        "bowtie2-build {input} {input}"
+
+
+# Map a sample's reads onto corresponding reference .fasta file.
+rule bowtie_map_onto_final_sequences:
+    input:
+        get_bowtie_target_sequence_files,
+        reads_1 = "Reads/Ribopicked/{sample}_R1_nonrrna_shared.fq.gz",
+        reads_2 = "Reads/Ribopicked/{sample}_R2_nonrrna_shared.fq.gz",
+    output:
+        "Alignments/{sample}_{seg}_segment.sam"
+    threads: 4
+    shell:
+        "bowtie2 --local -x {input[0]} -1 {input.reads_1} -2 {input.reads_2} -S {output} --threads {threads}"
+
+
+# Compress .sam alignment file.
+rule convert_sam_to_bam:
+    input:
+        "Alignments/{sample}_{seg}_segment.sam"
+    output:
+        "Alignments/{sample}_{seg}_segment.bam"
+    threads: 4
+    shell:
+        """
+        samtools view -S -b {input} | samtools sort -@ {threads} -o {output}
+        samtools index {output}
+        rm -f {input}
+        """
+
+
+rule extract_mapped_reads:
+    input:
+        "Alignments/{sample}_{seg}_segment.bam"
+    output:
+        "Alignments/{sample}_{seg}_segment_F4.bam"
+    threads: 1
+    params:
+        temp_sam = "Alignments/{sample}_{seg}_segment_F4.sam"
+    shell:
+        """
+        samtools view -h -F4 {input} > {params.temp_sam}
+        samtools view -S -b {params.temp_sam} | samtools sort -o {output}
+        samtools index {output}
+        rm -f {params.temp_sam}
+        rm -f {input}
+        rm -f {input}.bai
+        """
+
+
+def infer_lasv_positive_animals_from_final_sequences(wildcards):
+    """
+    Determines .bam files to be acquired based on available LASV available seqs
+
+    Parameters
+    ----------
+    wildcards: Snakemake wildcard object
+        Contains LASV segment (S or L) as a string, determining which sequences
+        to look for.
+
+    Returns
+    -------
+    target_bam_files: list of str
+        List containing filepaths for .bam alignment files to be created. Based
+        on available LASV sequences.
+    """
+
+    # Check directory containing finalised LASV sequences to get list of all
+    # LASV-infected animals. If a LASV seq is present, animal is LASV-positive.
+    final_seq_dir = "Sequences/Final"
+    segment = wildcards.seg
+    # Extract animals names from LASV .fasta filenames.
+    animals = glob_wildcards(os.path.join(final_seq_dir, "{animal}_"+segment+".fasta")).animal
+
+    target_bam_files = []
+
+    # Create filepaths for .bam files for each animal.
+    for animal in animals:
+        # For each animal create 1 target .bam file using aggregate of all samples 
+        filename = animal + "_all_samples_" + segment + "_segment_F4.bam"
+        bam_file = os.path.join("Alignments",filename)
+        target_bam_files.append(bam_file)
+
+        # Then for same animal create 1 .bam file for each individual sample
+        # e.g. Blood, Urogenital. Based on config.yml file.
+        for sample in config["all_samples"]:
+            if animal in sample:
+                filename = sample + "_" + segment + "_segment_F4.bam"
+                bam_file = os.path.join("Alignments", filename)
+                target_bam_files.append(bam_file)
+
+    return target_bam_files  
+
+# Dummy rule to drive the pipeline. done_{seg}.txt is empty.
+rule aggregate_bam_files:
+    input:
+        infer_lasv_positive_animals_from_final_sequences
+    output:
+        "Alignments/done_{seg}.txt"
+    shell:
+        "touch {output}"
