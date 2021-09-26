@@ -23,8 +23,17 @@
 
  https://sourceforge.net/projects/ribopicker/ 
 
- Ensure that ribopicker can be run with the command ribopicker.pl. Alternatively, modify the ribopicker command in the config.yml file to suit
- your installation.
+ Ensure that ribopicker can be run with the command ribopicker.pl. Alternatively, modify the following entry in config.yml with your own ribopicker command:
+
+ `ribopicker_command:
+    ribopicker.pl`
+
+ You must also modify the names of the SILVA rRNA databses installed with ribopicker in the config.yml:
+
+ `ribopicker_slr_db:
+    slr123
+  ribopicker_ssr_db:
+    ssr123`
 
 
 ### DIAMOND Database
@@ -49,7 +58,7 @@ The Snakemake files should be run from the project directory using using:
 
  This pipeline does not include additional manual steps such as combining LASV contigs into complete sequences:
  - Splitting erroneously joined segments (L and S segments in one contig)
-- Joining contigs via read mapping extension
+ - Joining contigs via read mapping extension
 
 ### Config File
 

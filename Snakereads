@@ -20,21 +20,36 @@ rule gzip_raw_reads:
 		"""
 
 
-def get_all_reads_for_animal(wildcards):
+def get_all_ribopicked_reads_for_animal(wildcards):
+	"""Returns list of rRNA depleted read files corresponding to given animal.
+
+	Parameters
+	----------
+	wildcards: Snakemake wildcards object
+		Contains animal ID as a string and read file number (1 or 2) as an integer.
+
+	Returns
+	-------
+	read_files: list of str
+		List of filepaths for reads corresponding to input animal ID.
+	"""
+
     animal = wildcards.animal
     num = wildcards.num
-    print(animal)
-    print(num)
+
     read_files = []
+    # Check config file to determine all present samples for animal
+    # e.g. 00019 may have 00199_US_L_NA_S11 and 00199_BL_L1_NA_S7
     for sample in config["all_samples_by_animal"][animal]:
         read_files.append("Reads/Ribopicked/{}_R{}_nonrrna_shared.fq.gz".format(sample, num))
-    print(read_files)
+
     return read_files
 
 
+# Aggregates rRNA depleted reads from different samples for the same animal
 rule concatenate_ribopicked_read_sets_for_animals:
     input:
-        get_all_reads_for_animal
+        get_all_ribopicked_reads_for_animal
     output:
         "Reads/Ribopicked/{animal}_all_samples_R{num}.fq.gz"
     params:
@@ -70,6 +85,7 @@ rule trim_reads:
 	shell:
 		"trim_galore -q 25 --length 50 --paired --output_dir Reads/Trimmed {input}"
 
+
 rule count_trimmed_reads:
 	input:
 		"".join(["Reads/Trimmed/{sample}_R1_001_val_1.", config["trimmed_reads_format"]]),
@@ -84,6 +100,7 @@ rule count_trimmed_reads:
 		sed -i "{{\$s/$/,$READ_COUNT/}}" {output}
 		"""
 
+
 rule unzip_for_deduplication:
 	input:
 		"".join(["Reads/Trimmed/{sample}_R1_001_val_1.", config["trimmed_reads_format"]]),
@@ -97,6 +114,7 @@ rule unzip_for_deduplication:
 		gunzip -c {input[0]} > {output[0]}
 		gunzip -c {input[1]} > {output[1]}
 		"""
+
 
 rule create_deduplication_reads_file:
 	input:
@@ -124,7 +142,6 @@ rule deduplicate_reads:
 		"""
 
 
-
 rule zip_deduplicated_reads_and_remove_uncompressed_trimmed_reads:
 	input:
 		"Reads/Deduplicated/{sample}_R1_dedup.fq",
@@ -140,6 +157,7 @@ rule zip_deduplicated_reads_and_remove_uncompressed_trimmed_reads:
 		rm -f {input[2]}
 		rm -f {input[3]}
 		"""
+
 
 rule count_and_zip_deduplicated_reads:
 	input:
@@ -165,13 +183,17 @@ rule filter_rrna_reads_with_ribopicker:
 		"Reads/Ribopicked/{sample}_R{num}_nonrrna.fq",
 		"Reads/Ribopicked/{sample}_R{num}_rrna.fq",
 	params:
-		output_dir = "Reads/Ribopicked/"
+		output_dir = "Reads/Ribopicked/",
+		rp_cmd = config["ribopicker_command"]
+		rp_ssr_db = config["ribopicker_ssr_db"],
+		rp_slr_db = config["ribopicker_slr_db"],
+		output_id = "{sample}_R{num}"
 	benchmark:
 		"Benchmarks/{sample}_R{num}_ribopicker_benchmark.txt"
 	threads: 16
 	shell:
 		"""
-		ribopicker.pl -f {input} -dbs slr123,ssr123 -t {threads} -out_dir {params.output_dir} -id {wildcards.sample}_R{wildcards.num}
+		{params.rp_cmd} -f {input} -dbs {params.rp_slr_db},{params.rp_ssr_db} -t {threads} -out_dir {params.output_dir} -id {params.output_id}
 		"""
 
 rule gzip_ribopicker_output:
@@ -188,6 +210,8 @@ rule gzip_ribopicker_output:
 		gzip {input[1]}
 		"""
 
+# Keep only read pairs which appear in both rRNA-depleted files.
+# If a read is present in R1 but not in R2, it is filtered out.
 rule filter_for_shared_non_rrna_Reads:
 	input:
 		"Reads/Ribopicked/{sample}_R1_nonrrna.fq.gz",

@@ -1,5 +1,6 @@
 ###### Sample and Reference Information ######
 
+### Sample Information ###
 all_samples:
   - 00414_BL_L1_NA_S20
   - 00367_BL_L1_NA_S19
@@ -180,29 +181,7 @@ all_samples_by_animal:
     - 00052_OS_L_NA_S23
     - 00052_BL_L1_NA_S3
 
-references:
-  - Lineage_4_Reference
-  - Lineage_3_Reference
-  - Lineage_2_Reference
-reference_ids:
-  - GU481071.1
-  - GU481072.1
-good_s_scaffold_samples:
-  - 00303_US_L_NA_S28
-  - 00303_OS_L_NA_S30
-  - 00303_BL_L1_NA_S1
-  - 00292_US_L_NA_S27
-  - 00292_OS_L_NA_S29
-  - 00292_BL_L1_NA_S22
-  - 00241_BL_L1_NA_S18
-  - 00214_BL_L1_NA_S10
-  - 00204_BL_L1_NA_S8
-  - 00187_US_L_NA_S26
-  - 00187_OS_L_NA_S24
-  - 00187_BL_L1_NA_S5
-  - 00106_BL_L1_NA_S4
-  - 00052_US_L_NA_S25
-  - 00052_OS_L_NA_S23
+### Taxonomy Information ###
 tax_ranks:
   - superkingdom
   - phylum
@@ -211,7 +190,6 @@ tax_ranks:
   - family
   - subfamily
   - genus
-
 target_taxons:
   virus:
     rank: superkingdom
@@ -228,6 +206,14 @@ target_taxons:
 
 ###### File locations and file extensions ######
 
+### Ribopicker ###
+ribopicker_command:
+  ribopicker.pl
+ribopicker_slr_db:
+  slr123
+ribopicker_ssr_db:
+  ssr123
+
 raw_reads_format:
   fastq
 compressed_raw_reads_format:
@@ -236,6 +222,7 @@ trimmed_reads_format:
   fq.gz
 diamond_db:
   Databases/RefSeq_Protein.dmnd
+
 bowtie2_index_extensions:
   - rev.2.bt2
   - rev.1.bt2
