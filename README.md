@@ -108,7 +108,10 @@ This Snakefile classifies contigs from the de novo assembly through several step
    - BLASTX using Diamond v.2.0.9 against a Diamond2 database including all RefSeq Proteins and their taxonomy information
    - Custom Python scripts to match each contig to the Lowest Common Ancestor of all its BLASTx hits.
    - Custom Python scripts to idnetify and extract contigs matching a target taxon (e.g. all contigs with arenavirus hits)
-Run with `snakemake --snakefile Snakediamond -j {threads}`
+Run with 
+
+`snakemake --snakefile Snakediamond -j {threads}`
+
 Diamond hit results are stored in the Diamond directory
 Classified contigs are stored in the Contigs directory
     - Each target taxon has its own subdirectory.
