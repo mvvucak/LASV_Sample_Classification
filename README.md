@@ -105,7 +105,7 @@ Run with `snakemake --snakefile Snakeassemble -j {threads}`
 This Snakefile classifies contigs from the de novo assembly through several steps:
    - BLASTX using Diamond v.2.0.9 against a Diamond2 database including all RefSeq Proteins and their taxonomy information
    - Custom Python scripts to match each contig to the Lowest Common Ancestor of all its BLASTx hits.
-   - Custom Python scripts to idnetify and extract contigs matching a target taxon (e.g. all contigs with arenavirus hits)
+   - Custom Python scripts to identify and extract contigs matching a target taxon (e.g. all contigs with arenavirus hits)
 
 Run with `snakemake --snakefile Snakediamond -j {threads}`
 
@@ -115,7 +115,7 @@ Classified contigs are stored in the Contigs directory
 
 #### Snakemap
 
-This Snakefile maps reads onto LASV contigs using Bowtie2 v2.3.1 and the `--local` option.
+This Snakefile maps reads onto arenavirus-like contigs using Bowtie2 v2.3.1 and the `--local` option.
 It uses samtools to output .bam alignment files for viewing in Tablet or further analysis.
 - The pipeline relies on LASV sequences being stored in the "Sequences/Final" directory.
     - This includes two .fasta files per animal:
