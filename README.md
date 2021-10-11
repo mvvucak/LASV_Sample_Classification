@@ -91,7 +91,7 @@ config.yml stores the following:
 #### Snakereads
 
 This Snakefile runs basic read processing steps on raw Illumina reads, including:
-- Adapter trimming and quality control (trim-galore v0.4.1)
+- Adapter trimming and quality control (trim-galore v0.4.1 using --paired and --illumina options)
 - Deduplication (fastuniq v1.1)
 - rRNA filtering (riboPicker v0.4.3)
 - Additional steps for counting reads at each stage.
@@ -108,9 +108,8 @@ This Snakefile classifies contigs from the de novo assembly through several step
    - BLASTX using Diamond v.2.0.9 against a Diamond2 database including all RefSeq Proteins and their taxonomy information
    - Custom Python scripts to match each contig to the Lowest Common Ancestor of all its BLASTx hits.
    - Custom Python scripts to idnetify and extract contigs matching a target taxon (e.g. all contigs with arenavirus hits)
-Run with 
 
-`snakemake --snakefile Snakediamond -j {threads}`
+Run with `snakemake --snakefile Snakediamond -j {threads}`
 
 Diamond hit results are stored in the Diamond directory
 Classified contigs are stored in the Contigs directory
@@ -118,7 +117,7 @@ Classified contigs are stored in the Contigs directory
 
 #### Snakemap
 
-This Snakefile maps reads onto LASV contigs using Bowtie2 \-\-local. 
+This Snakefile maps reads onto LASV contigs using Bowtie2 v2.3.1 and the `--local` option
 It uses samtools to output .bam alignment files for viewing in Tablet or further analysis.
 - The pipeline relies on LASV sequences being stored in the "Sequences/Final" directory.
     - This includes two .fasta files per animal:
