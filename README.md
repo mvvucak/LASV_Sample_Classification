@@ -19,21 +19,19 @@ Then activate it:
 
 ### RiboPicker
 
- **RiboPicker**  is a tool for filtering out rRNA reads from samples. It is not available on any Conda channel and must be installed separately from:
+**RiboPicker**  is a tool for filtering out rRNA reads from samples. It is not available on any Conda channel and must be installed separately from:
 
- https://sourceforge.net/projects/ribopicker/ 
+https://sourceforge.net/projects/ribopicker/ 
 
- Ensure that ribopicker can be run with the command `ribopicker.pl`. Alternatively, modify the following entry in config.yml with your own ribopicker command:
+Ensure that ribopicker can be run with the command `ribopicker.pl`. Alternatively, modify the following entry in config.yml with your own ribopicker command:
 
- `ribopicker_command:
+`ribopicker_command:
     ribopicker.pl`
 
- You must also modify the names of the SILVA rRNA databses installed with ribopicker in the config.yml:
+You must also modify the names of the SILVA rRNA databses installed with ribopicker in the config.yml:
 
- `ribopicker_slr_db:
-    slr123`
-  ``ribopicker_ssr_db:
-    ssr123`
+`ribopicker_slr_db: slr123`
+`ribopicker_ssr_db: ssr123`
 
 
 ### DIAMOND Database
