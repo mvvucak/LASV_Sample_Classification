@@ -91,7 +91,7 @@ config.yml stores the following:
 #### Snakereads
 
 This Snakefile runs basic read processing steps on raw Illumina reads, including:
-- Adapter trimming and quality control (trim-galore v0.4.1 using --paired and --illumina options)
+- Adapter trimming and quality control (trim-galore v0.4.1 using `--paired` and `--illumina` options)
 - Deduplication (fastuniq v1.1)
 - rRNA filtering (riboPicker v0.4.3)
 - Additional steps for counting reads at each stage.
