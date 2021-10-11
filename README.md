@@ -66,22 +66,22 @@ config.yml stores the following:
 
 #### Sample/Animal Information:
 
-- Animal IDs under animal (five-digit numbers with leading 0s e.g. 00019)
-- Sample IDs under all_samples, starting with animal ID followed by sample type and Illumina run identifiers:
+- Animal IDs under `animal` (five-digit numbers with leading 0s e.g. 00019)
+- Sample IDs under `all_samples`, starting with animal ID followed by sample type and Illumina run identifiers:
     - 00019_BL_L1_NA_S13 denotes blood sample from animal 00019
-- Sample IDs are grouped under their corresponding animal under all_samples_by_animal
+- Sample IDs are grouped under their corresponding animal under `all_samples_by_animal`
 
 #### Target taxon information:
 
-- tax_ranks lists the taxonomic ranks to be identified for each Diamond hit. Used by the get_tax_ranks.py script
-- target_taxons lists information for any taxa being searched for in the de novo output: 
+- `tax_ranks` lists the taxonomic ranks to be identified for each Diamond hit. Used by the get_tax_ranks.py script
+- `target_taxons` lists information for any taxa being searched for in the de novo output: 
     - Scientific name (e.g. mammarenavirus)
     - Taxon rank (e.g. genus)
     - TaxID (e.g. 1653394)
 
 #### Mundane processing information:
 
-- Expected file extensions (e.g. fastq, fq.gz)
+- Expected file extensions (e.g. `fastq`, `fq.gz`)
 - Database paths.
 
 ### Snakemake Pipeline
