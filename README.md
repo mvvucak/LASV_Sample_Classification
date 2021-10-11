@@ -5,17 +5,17 @@
 
 ### Conda Environment
 
- lasv_sample_classification.yml contains most of the packages needed to run the pipelines. You will need to clone the environment using Conda.
+lasv_sample_classification.yml contains most of the packages needed to run the pipelines. You will need to clone the environment using Conda.
 
- Conda can be installed from: https://docs.conda.io/en/latest/miniconda.html
+Conda can be installed from: https://docs.conda.io/en/latest/miniconda.html
 
- Once conda has been installed, you can create the environment with:
+Once conda has been installed, you can create the environment with:
 
- conda create --name lasv_sample_class --file lasv_sample_classification.yml
+`conda create --name lasv_sample_class --file lasv_sample_classification.yml`
 
- Then activate it:
+Then activate it:
 
- conda ctivate lasv_sample_class
+`conda ctivate lasv_sample_class`
 
 ### RiboPicker
 
@@ -23,7 +23,7 @@
 
  https://sourceforge.net/projects/ribopicker/ 
 
- Ensure that ribopicker can be run with the command ribopicker.pl. Alternatively, modify the following entry in config.yml with your own ribopicker command:
+ Ensure that ribopicker can be run with the command `ribopicker.pl`. Alternatively, modify the following entry in config.yml with your own ribopicker command:
 
  `ribopicker_command:
     ribopicker.pl`
@@ -45,7 +45,7 @@
 
  If not, you will have to run Snakedb to construct the databse:
 
- ``snakemake --snakefile Snakedb`` 
+ `snakemake --snakefile Snakedb`
 
  Note that this process can take several hours and that the database will take up ~90GB of storage space when complete.
 
@@ -117,7 +117,7 @@ Classified contigs are stored in the Contigs directory
 
 #### Snakemap
 
-This Snakefile maps reads onto LASV contigs using Bowtie2 v2.3.1 and the `--local` option
+This Snakefile maps reads onto LASV contigs using Bowtie2 v2.3.1 and the `--local` option.
 It uses samtools to output .bam alignment files for viewing in Tablet or further analysis.
 - The pipeline relies on LASV sequences being stored in the "Sequences/Final" directory.
     - This includes two .fasta files per animal:
