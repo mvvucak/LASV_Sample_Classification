@@ -15,7 +15,7 @@ Once conda has been installed, you can create the environment with:
 
 Then activate it:
 
-`conda ctivate lasv_sample_class`
+`conda activate lasv_sample_class`
 
 ### RiboPicker
 
